@@ -1,1 +1,8 @@
 node_modules/
+dist/
+.expo/
+web-build/
+*.orig.*
+.DS_Store
+coverage/
+*.log
