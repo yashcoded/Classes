@@ -1,0 +1,10 @@
+export * as authController from './authController';
+export * as userController from './userController';
+export * as batchController from './batchController';
+export * as sessionController from './sessionController';
+export * as attendanceController from './attendanceController';
+export * as classLogController from './classLogController';
+export * as testController from './testController';
+export * as feeController from './feeController';
+export * as notificationController from './notificationController';
+export * as reportController from './reportController';
