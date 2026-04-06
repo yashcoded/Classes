@@ -35,4 +35,13 @@ export function getMe(): Promise<User> {
   return apiGet<User>('/auth/me');
 }
 
+export function loginWithGoogle(body: {
+  idToken?: string;
+  accessToken?: string;
+  role?: UserRole;
+  teacherId?: string;
+}): Promise<LoginResponse> {
+  return apiPost<LoginResponse>('/auth/google', body);
+}
+
 export type { AuthUser };

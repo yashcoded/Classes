@@ -29,6 +29,15 @@ const TestResultsView: React.FC = () => {
   useEffect(() => { void load(); }, [load]);
 
   if (isLoading) return <LoadingSpinner message="Loading results..." />;
+  if (error?.includes('No approved student link found')) {
+    return (
+      <EmptyState
+        icon="🔗"
+        title="Link a student first"
+        description="Approve a parent-student link to view test results."
+      />
+    );
+  }
   if (error) return <ErrorMessage message={error} onRetry={() => { void load(); }} />;
 
   const getVariant = (pct: number): 'success' | 'info' | 'warning' | 'danger' => {

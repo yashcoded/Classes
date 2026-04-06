@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { sessionService } from '../services/sessionService';
 import { validateCreateSession } from '../validators/sessionValidator';
+import { UserRole } from '../types';
 
 export const createSession = (req: Request, res: Response, next: NextFunction): void => {
   try {
@@ -34,7 +35,10 @@ export const getBatchSessions = (req: Request, res: Response, next: NextFunction
 
 export const getMySessions = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    const sessions = sessionService.getTeacherSessions(req.user!.userId);
+    const sessions =
+      req.user!.role === UserRole.STUDENT
+        ? sessionService.getStudentSessions(req.user!.userId)
+        : sessionService.getTeacherSessions(req.user!.userId);
     res.json(sessions);
   } catch (err) {
     next(err);

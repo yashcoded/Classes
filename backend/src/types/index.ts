@@ -18,6 +18,12 @@ export enum CheckInMethod {
   MANUAL = 'manual',
 }
 
+export enum ApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 export enum FeeStatus {
   PENDING = 'pending',
   PAID = 'paid',
@@ -60,6 +66,11 @@ export interface User {
   role: UserRole;
   name: string;
   phone?: string;
+  status: ApprovalStatus;
+  /** Google account subject (`sub`) when user has signed in with Google */
+  googleSub?: string;
+  /** How the account was originally created */
+  authProvider?: 'password' | 'google';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -90,12 +101,25 @@ export interface ParentProfile {
   updatedAt: Date;
 }
 
+export interface StudentTeacherLink {
+  id: string;
+  studentId: string;
+  teacherId: string;
+  status: ApprovalStatus;
+  createdAt: Date;
+  approvedAt?: Date;
+}
+
 export interface StudentParentLink {
   id: string;
   studentId: string;
   parentId: string;
   relation: string;
+  status: ApprovalStatus;
+  requestedBy: string;
+  approvedBy?: string;
   createdAt: Date;
+  approvedAt?: Date;
 }
 
 export interface Batch {

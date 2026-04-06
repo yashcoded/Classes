@@ -14,7 +14,7 @@ export class JwtProvider implements IAuthProvider {
   verifyToken(token: string): AuthPayload | null {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload;
-      return { userId: decoded.userId, role: decoded.role, email: decoded.email };
+      return { userId: decoded.userId, role: decoded.role, email: decoded.email, status: decoded.status };
     } catch {
       return null;
     }

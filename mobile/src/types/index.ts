@@ -2,6 +2,8 @@
 
 export type UserRole = 'teacher' | 'student' | 'parent' | 'admin';
 
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+
 export type BatchMembershipStatus = 'active' | 'inactive' | 'transferred';
 
 export type BatchTransferStatus = 'pending' | 'completed' | 'cancelled';
@@ -30,8 +32,32 @@ export interface User {
   role: UserRole;
   name: string;
   phone?: string;
+  status: ApprovalStatus;
+  googleSub?: string;
+  authProvider?: 'password' | 'google';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StudentTeacherLink {
+  id: string;
+  studentId: string;
+  teacherId: string;
+  status: ApprovalStatus;
+  createdAt: string;
+  approvedAt?: string;
+}
+
+export interface StudentParentLink {
+  id: string;
+  studentId: string;
+  parentId: string;
+  relation: string;
+  status: ApprovalStatus;
+  requestedBy: string;
+  approvedBy?: string;
+  createdAt: string;
+  approvedAt?: string;
 }
 
 export interface TeacherProfile extends User {

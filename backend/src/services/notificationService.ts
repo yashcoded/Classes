@@ -1,6 +1,7 @@
 import { NotificationRepository } from '../repositories/notificationRepository';
 import { BatchMembershipRepository } from '../repositories/membershipRepository';
 import { UserRepository } from '../repositories/userRepository';
+import { studentParentLinks, studentTeacherLinks } from '../models';
 import {
   Notification,
   NotificationTargetType,
@@ -95,5 +96,86 @@ export const notificationService = {
     if (!requester) throw new NotFoundError('User not found');
     if (requester.role !== UserRole.ADMIN) throw new ForbiddenError('Admin access required');
     return notificationRepo.findAll();
+  },
+
+  sendPaymentUpdate(
+    senderId: string,
+    data: {
+      studentId: string;
+      amount: number;
+      paidOn: string;
+      reference?: string;
+      note?: string;
+    },
+  ): Notification[] {
+    const sender = userRepo.findById(senderId);
+    if (!sender) throw new NotFoundError('Sender not found');
+    if (sender.role !== UserRole.PARENT && sender.role !== UserRole.TEACHER) {
+      throw new ForbiddenError('Only parents or teachers can send payment updates');
+    }
+
+    const student = userRepo.findById(data.studentId);
+    if (!student || student.role !== UserRole.STUDENT) {
+      throw new NotFoundError('Student not found');
+    }
+
+    const approvedTeacherLinks = Array.from(studentTeacherLinks.values()).filter(
+      (link) => link.studentId === data.studentId && link.status === 'approved',
+    );
+    const approvedParentLinks = Array.from(studentParentLinks.values()).filter(
+      (link) => link.studentId === data.studentId && link.status === 'approved',
+    );
+
+    const isLinkedParent =
+      sender.role === UserRole.PARENT &&
+      approvedParentLinks.some((link) => link.parentId === senderId);
+    const isLinkedTeacher =
+      sender.role === UserRole.TEACHER &&
+      approvedTeacherLinks.some((link) => link.teacherId === senderId);
+
+    if ((sender.role === UserRole.PARENT && !isLinkedParent) || (sender.role === UserRole.TEACHER && !isLinkedTeacher)) {
+      throw new ForbiddenError('You are not linked to this student');
+    }
+
+    const recipientUserIds =
+      sender.role === UserRole.PARENT
+        ? approvedTeacherLinks.map((link) => link.teacherId)
+        : approvedParentLinks.map((link) => link.parentId);
+
+    if (recipientUserIds.length === 0) {
+      throw new NotFoundError('No recipients found for this payment update');
+    }
+
+    const uniqueRecipients = Array.from(new Set(recipientUserIds));
+    const targetType =
+      sender.role === UserRole.PARENT
+        ? NotificationTargetType.TEACHER
+        : NotificationTargetType.PARENT;
+    const title =
+      sender.role === UserRole.PARENT
+        ? `Payment reported by parent (${student.name})`
+        : `Payment update from teacher (${student.name})`;
+    const messageLines = [
+      `PAYMENT_UPDATE|studentId=${student.id}`,
+      `Student: ${student.name}`,
+      `Amount: Rs ${data.amount}`,
+      `Paid on: ${data.paidOn}`,
+      `Reference: ${data.reference?.trim() || 'N/A'}`,
+      `Note: ${data.note?.trim() || 'N/A'}`,
+      `Submitted by: ${sender.name} (${sender.email})`,
+      'Please verify and update fee status accordingly.',
+    ];
+    const message = messageLines.join('\n');
+
+    return uniqueRecipients.map((targetId) =>
+      notificationRepo.create({
+        title,
+        message,
+        targetType,
+        targetId,
+        senderId,
+        readBy: [],
+      }),
+    );
   },
 };

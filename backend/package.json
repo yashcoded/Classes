@@ -4,7 +4,8 @@
   "description": "Tuition/class management backend",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node ./node_modules/typescript/lib/tsc.js",
+    "zip:eb": "node scripts/zip-eb.cjs",
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
     "test": "jest --forceExit"
@@ -12,8 +13,11 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^8.0.4",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
@@ -23,6 +27,7 @@
     "@types/jest": "^29.5.10",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.10.0",
+    "@types/nodemailer": "^7.0.11",
     "@types/uuid": "^9.0.7",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
@@ -33,7 +38,13 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "testMatch": ["**/__tests__/**/*.test.ts"],
-    "moduleFileExtensions": ["ts", "js", "json"]
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "js",
+      "json"
+    ]
   }
 }

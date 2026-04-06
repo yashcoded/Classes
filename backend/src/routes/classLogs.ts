@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import {
   createLog,
   getLog,
@@ -10,7 +10,7 @@ import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 import { UserRole } from '../types';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 router.use(authenticate);
 

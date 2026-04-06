@@ -86,7 +86,10 @@ const TestList: React.FC = () => {
         <FlatList
           data={tests}
           keyExtractor={(t) => t.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            tests.length === 0 ? styles.emptyList : null,
+          ]}
           ListEmptyComponent={
             <EmptyState
               icon="📝"
@@ -181,7 +184,12 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   list: {
+    flexGrow: 1,
     padding: 16,
+    paddingBottom: 96,
+  },
+  emptyList: {
+    justifyContent: 'center',
   },
   testDesc: {
     color: '#6B7280',

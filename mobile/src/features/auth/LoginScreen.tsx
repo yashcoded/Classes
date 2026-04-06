@@ -9,16 +9,22 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppBrandMark from '@/components/common/AppBrandMark';
 import Button from '@/components/common/Button';
 import ErrorMessage from '@/components/common/ErrorMessage';
+import { colors } from '@/constants/branding';
 import { useAuth } from '@/hooks/useAuth';
+import { useGoogleSignIn, isGoogleOAuthConfigured } from '@/hooks/useGoogleSignIn';
 
 const LoginScreen: React.FC = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
+  const { promptGoogle, canPrompt } = useGoogleSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
@@ -38,22 +44,46 @@ const LoginScreen: React.FC = () => {
     }
   };
 
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    try {
+      const tokens = await promptGoogle();
+      if (!tokens?.idToken && !tokens?.accessToken) {
+        setError('Google sign-in was cancelled or failed.');
+        return;
+      }
+      await loginWithGoogle({
+        idToken: tokens.idToken,
+        accessToken: tokens.accessToken,
+      });
+      router.replace('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.inner}>
-        <Text style={styles.logo}>🎓</Text>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
+        <AppBrandMark variant="large" showTagline />
+        <Text style={styles.screenTitle}>Welcome back! 👋</Text>
+        <Text style={styles.screenSubtitle}>
+          Teachers love the calm dashboard ✨ Students stay on top of class 🎯 — sign in and jump in!
+        </Text>
 
         {error ? <ErrorMessage message={error} /> : null}
 
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textMuted}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -63,30 +93,51 @@ const LoginScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           placeholder="Password"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textMuted}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
         <Button
-          title="Sign In"
+          title="🚀 Sign in"
           onPress={() => { void handleLogin(); }}
           loading={loading}
           style={styles.button}
         />
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or with Google</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Button
+          title="🔐 Continue with Google"
+          onPress={() => { void handleGoogle(); }}
+          loading={googleLoading}
+          disabled={!canPrompt || !isGoogleOAuthConfigured()}
+          variant="secondary"
+          style={styles.googleButton}
+        />
+        {!isGoogleOAuthConfigured() ? (
+          <Text style={styles.googleHint}>
+            Add Google client IDs to mobile/.env (see docs/GOOGLE_AND_EMAIL.md).
+          </Text>
+        ) : null}
 
         <TouchableOpacity
           onPress={() => router.push('/(auth)/register')}
           style={styles.linkContainer}
         >
           <Text style={styles.linkText}>
-            Don&apos;t have an account?{' '}
-            <Text style={styles.link}>Register</Text>
+            New here?{' '}
+            <Text style={styles.link}>Create an account ✨</Text>
           </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -95,7 +146,34 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   container: {
-    backgroundColor: '#F9FAFB',
+    flex: 1,
+  },
+  dividerLine: {
+    backgroundColor: colors.border,
+    flex: 1,
+    height: 1,
+  },
+  dividerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginVertical: 20,
+  },
+  dividerText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    marginHorizontal: 12,
+  },
+  googleButton: {
+    marginTop: 0,
+  },
+  googleHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  safeArea: {
+    backgroundColor: colors.background,
     flex: 1,
   },
   inner: {
@@ -104,44 +182,39 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: 10,
     borderWidth: 1,
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 15,
     marginBottom: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   link: {
-    color: '#4F46E5',
+    color: colors.primary,
     fontWeight: '600',
   },
   linkContainer: {
     marginTop: 20,
   },
   linkText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
   },
-  logo: {
-    fontSize: 56,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: '#6B7280',
+  screenSubtitle: {
+    color: colors.textSecondary,
     fontSize: 14,
-    marginBottom: 32,
+    marginBottom: 24,
     textAlign: 'center',
   },
-  title: {
-    color: '#111827',
-    fontSize: 26,
+  screenTitle: {
+    color: colors.textPrimary,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 6,
     textAlign: 'center',
   },
 });

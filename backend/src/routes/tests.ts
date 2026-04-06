@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import {
   createTest,
   getTest,
@@ -13,11 +13,11 @@ import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 import { UserRole } from '../types';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 router.use(authenticate);
 
-router.get('/my-results', authorize(UserRole.STUDENT), getMyResults);
+router.get('/my-results', authorize(UserRole.STUDENT, UserRole.PARENT), getMyResults);
 router.post('/', authorize(UserRole.TEACHER, UserRole.ADMIN), createTest);
 router.get('/:id', getTest);
 router.put('/:id', authorize(UserRole.TEACHER, UserRole.ADMIN), updateTest);

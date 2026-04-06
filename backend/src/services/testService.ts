@@ -12,6 +12,7 @@ import {
   BatchMembershipStatus,
 } from '../types';
 import { UserRepository } from '../repositories/userRepository';
+import { studentParentLinks } from '../models';
 
 const testRepo = new TestRepository();
 const testResultRepo = new TestResultRepository();
@@ -144,6 +145,27 @@ export const testService = {
 
   getStudentResults(studentId: string): TestResult[] {
     return testResultRepo.findByStudentId(studentId);
+  },
+
+  getResultsForUser(userId: string): TestResult[] {
+    const user = userRepo.findById(userId);
+    if (!user) throw new NotFoundError('User not found');
+
+    if (user.role === UserRole.STUDENT) {
+      return testResultRepo.findByStudentId(userId);
+    }
+
+    if (user.role === UserRole.PARENT) {
+      const approvedLink = Array.from(studentParentLinks.values()).find(
+        (link) => link.parentId === userId && link.status === 'approved',
+      );
+      if (!approvedLink) {
+        throw new ForbiddenError('No approved student link found for this parent');
+      }
+      return testResultRepo.findByStudentId(approvedLink.studentId);
+    }
+
+    throw new ForbiddenError('Access denied');
   },
 
   getStudentResultForTest(testId: string, studentId: string): TestResult {

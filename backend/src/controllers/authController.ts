@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
-import { validateRegister, validateLogin } from '../validators/authValidator';
+import { validateRegister, validateLogin, validateGoogleAuth } from '../validators/authValidator';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -32,6 +32,21 @@ export const me = (req: Request, res: Response, next: NextFunction): void => {
   try {
     const user = authService.getCurrentUser(req.user!.userId);
     res.json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const googleAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const data = validateGoogleAuth(req.body);
+    const result = await authService.loginWithGoogle({
+      idToken: data.idToken,
+      accessToken: data.accessToken,
+      role: data.role,
+      teacherId: data.teacherId,
+    });
+    res.json(result);
   } catch (err) {
     next(err);
   }

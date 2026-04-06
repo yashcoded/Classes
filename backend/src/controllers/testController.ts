@@ -75,7 +75,7 @@ export const getTestResults = (req: Request, res: Response, next: NextFunction):
 
 export const getMyResults = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    const results = testService.getStudentResults(req.user!.userId);
+    const results = testService.getResultsForUser(req.user!.userId);
     res.json(results);
   } catch (err) {
     next(err);

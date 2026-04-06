@@ -49,3 +49,35 @@ export function validateLogin(body: unknown): { email: string; password: string 
 
   return { email: b.email.trim().toLowerCase(), password: b.password };
 }
+
+export function validateGoogleAuth(body: unknown): {
+  idToken?: string;
+  accessToken?: string;
+  role?: UserRole;
+  teacherId?: string;
+} {
+  if (typeof body !== 'object' || body === null) throw new ValidationError('Invalid request body');
+  const b = body as Record<string, unknown>;
+
+  const idToken = typeof b.idToken === 'string' && b.idToken.length > 0 ? b.idToken : undefined;
+  const accessToken =
+    typeof b.accessToken === 'string' && b.accessToken.length > 0 ? b.accessToken : undefined;
+
+  if (!idToken && !accessToken) {
+    throw new ValidationError('idToken or accessToken is required');
+  }
+
+  let role: UserRole | undefined;
+  if (b.role !== undefined) {
+    const validRoles = Object.values(UserRole) as string[];
+    if (typeof b.role !== 'string' || !validRoles.includes(b.role)) {
+      throw new ValidationError(`Role must be one of: ${validRoles.join(', ')}`);
+    }
+    role = b.role as UserRole;
+  }
+
+  const teacherId =
+    typeof b.teacherId === 'string' && b.teacherId.length > 0 ? b.teacherId : undefined;
+
+  return { idToken, accessToken, role, teacherId };
+}

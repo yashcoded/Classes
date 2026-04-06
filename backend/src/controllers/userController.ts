@@ -87,3 +87,84 @@ export const getParentStudents = (req: Request, res: Response, next: NextFunctio
     next(err);
   }
 };
+
+export const getPendingTeachers = (_req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const teachers = userService.getPendingTeachers();
+    res.json(teachers);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const approveUser = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const { approved } = req.body as { approved: boolean };
+    const user = userService.approveUser(req.params.id, approved);
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getApprovedTeachers = (_req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const teachers = userService.getApprovedTeachers();
+    res.json(teachers);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const requestParentStudentLink = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const requestedBy = req.user!.userId;
+    const { studentId, parentId, relation } = req.body as {
+      studentId: string;
+      parentId: string;
+      relation: string;
+    };
+    const link = userService.requestParentStudentLink(requestedBy, studentId, parentId, relation);
+    res.status(201).json(link);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getPendingParentStudentLinks = (_req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const links = userService.getPendingParentStudentLinks();
+    res.json(links);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const approveParentStudentLink = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const { approved } = req.body as { approved: boolean };
+    const link = userService.approveParentStudentLink(req.params.id, req.user!.userId, approved);
+    res.json(link);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyParentStudentLinks = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const links = userService.getParentStudentLinksForUser(req.user!.userId);
+    res.json(links);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const searchStudents = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const query = req.query.q as string;
+    const students = userService.searchStudents(query);
+    res.json(students);
+  } catch (err) {
+    next(err);
+  }
+};

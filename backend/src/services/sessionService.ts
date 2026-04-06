@@ -3,6 +3,7 @@ import { SessionRepository } from '../repositories/sessionRepository';
 import { BatchRepository } from '../repositories/batchRepository';
 import {
   ClassSession,
+  BatchMembershipStatus,
   SessionStatus,
   NotFoundError,
   ForbiddenError,
@@ -11,10 +12,12 @@ import {
   UserRole,
 } from '../types';
 import { UserRepository } from '../repositories/userRepository';
+import { BatchMembershipRepository } from '../repositories/membershipRepository';
 
 const sessionRepo = new SessionRepository();
 const batchRepo = new BatchRepository();
 const userRepo = new UserRepository();
+const membershipRepo = new BatchMembershipRepository();
 
 const QR_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 const QR_SECRET = process.env.QR_SECRET ?? 'qr-secret-dev';
@@ -70,6 +73,17 @@ export const sessionService = {
 
   getTeacherSessions(teacherId: string): ClassSession[] {
     return sessionRepo.findByTeacherId(teacherId);
+  },
+
+  getStudentSessions(studentId: string): ClassSession[] {
+    const memberships = membershipRepo
+      .findByStudentId(studentId)
+      .filter((m) => m.status === BatchMembershipStatus.ACTIVE);
+    const sessions = memberships.flatMap((membership) =>
+      sessionRepo.findByBatchId(membership.batchId),
+    );
+    // De-duplicate sessions when historical membership rows overlap.
+    return Array.from(new Map(sessions.map((session) => [session.id, session])).values());
   },
 
   startSession(sessionId: string, teacherId: string): ClassSession {

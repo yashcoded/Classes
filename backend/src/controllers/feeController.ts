@@ -32,7 +32,7 @@ export const getStudentFees = (req: Request, res: Response, next: NextFunction):
 
 export const getMyFees = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    const fees = feeService.getStudentFees(req.user!.userId);
+    const fees = feeService.getFeesForUser(req.user!.userId);
     res.json(fees);
   } catch (err) {
     next(err);

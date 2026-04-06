@@ -1,6 +1,8 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppBrandMark from '@/components/common/AppBrandMark';
 import Card from '@/components/common/Card';
 import Badge from '@/components/common/Badge';
 import ErrorMessage from '@/components/common/ErrorMessage';
@@ -8,6 +10,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useSessions } from '@/hooks/useSessions';
+import { colors } from '@/constants/branding';
 import type { SessionStatus } from '@/types';
 
 const STATUS_BADGE: Record<SessionStatus, 'success' | 'info' | 'default' | 'warning'> = {
@@ -40,33 +43,46 @@ const StudentDashboard: React.FC = () => {
   if (error) return <ErrorMessage message={error} />;
 
   return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hi, {user?.name ?? 'Student'} 👋</Text>
-          <Text style={styles.sub}>Ready to learn?</Text>
+        <View style={styles.headerLeft}>
+          <AppBrandMark variant="small" showTagline={false} />
+          <Text style={styles.greeting}>Hi {user?.name ?? 'Student'}! 🎓✨</Text>
+          <Text style={styles.subtitle}>Track attendance, crush tests & never miss a class 🚀</Text>
         </View>
-        <TouchableOpacity onPress={() => { void logout(); }}>
-          <Text style={styles.logout}>Logout</Text>
+        <TouchableOpacity
+          onPress={() => {
+            void (async () => {
+              await logout();
+              router.replace('/(auth)/login');
+            })();
+          }}
+          style={styles.logoutBtn}
+        >
+          <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
       </View>
 
+      {/* ── Stats ── */}
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
           <Text style={styles.statValue}>{attendancePercent}%</Text>
-          <Text style={styles.statLabel}>Attendance</Text>
+          <Text style={styles.statLabel}>✅ Attendance</Text>
         </Card>
         <Card style={styles.statCard}>
           <Text style={styles.statValue}>{records.length}</Text>
-          <Text style={styles.statLabel}>Classes</Text>
+          <Text style={styles.statLabel}>📝 Records</Text>
         </Card>
         <Card style={styles.statCard}>
           <Text style={styles.statValue}>{upcomingSessions.length}</Text>
-          <Text style={styles.statLabel}>Upcoming</Text>
+          <Text style={styles.statLabel}>🔜 Upcoming</Text>
         </Card>
       </View>
 
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
+      {/* ── Shortcuts ── */}
+      <Text style={styles.sectionTitle}>Your shortcuts ⚡</Text>
       <View style={styles.actionsRow}>
         <TouchableOpacity
           style={styles.actionBtn}
@@ -88,10 +104,11 @@ const StudentDashboard: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
+      {/* ── Upcoming ── */}
+      <Text style={styles.sectionTitle}>Coming up 📅</Text>
       {upcomingSessions.length === 0 ? (
         <Card>
-          <Text style={styles.emptyText}>No upcoming sessions</Text>
+          <Text style={styles.emptyText}>All clear — check back for new sessions 🌟</Text>
         </Card>
       ) : (
         upcomingSessions.map((session) => (
@@ -115,93 +132,121 @@ const StudentDashboard: React.FC = () => {
         ))
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  actionBtn: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 8,
+  safe: {
+    backgroundColor: colors.background,
     flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 12,
-  },
-  actionText: {
-    color: '#4F46E5',
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    marginBottom: 20,
   },
   container: {
-    backgroundColor: '#F9FAFB',
     flex: 1,
   },
   content: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 12,
   },
-  emptyText: {
-    color: '#9CA3AF',
-    textAlign: 'center',
-  },
-  greeting: {
-    color: '#111827',
-    fontSize: 22,
-    fontWeight: '700',
-  },
+
+  /* ── Header ── */
   header: {
-    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    marginTop: 8,
+    alignItems: 'flex-start',
+    marginBottom: 24,
   },
-  logout: {
-    color: '#EF4444',
+  headerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  greeting: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  subtitle: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  logoutBtn: {
+    paddingVertical: 4,
+    paddingLeft: 8,
+  },
+  logoutText: {
+    color: colors.danger,
+    fontSize: 14,
     fontWeight: '600',
   },
-  sectionTitle: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  sessionDate: {
-    color: '#374151',
-    flex: 1,
-    fontSize: 14,
-  },
-  sessionRow: {
-    alignItems: 'center',
+
+  /* ── Stats ── */
+  statsRow: {
     flexDirection: 'row',
+    marginHorizontal: -6,
+    marginBottom: 24,
   },
   statCard: {
     alignItems: 'center',
     flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 16,
-  },
-  statLabel: {
-    color: '#6B7280',
-    fontSize: 12,
-    marginTop: 4,
+    marginHorizontal: 6,
+    marginBottom: 0,
+    paddingVertical: 18,
   },
   statValue: {
-    color: '#4F46E5',
-    fontSize: 22,
-    fontWeight: '700',
+    color: colors.primary,
+    fontSize: 24,
+    fontWeight: '800',
   },
-  statsRow: {
+  statLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 6,
+  },
+
+  /* ── Actions ── */
+  actionsRow: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginHorizontal: -6,
+    marginBottom: 24,
   },
-  sub: {
-    color: '#6B7280',
-    fontSize: 13,
-    marginTop: 2,
+  actionBtn: {
+    backgroundColor: colors.primarySurface,
+    borderRadius: 10,
+    flex: 1,
+    marginHorizontal: 6,
+    paddingVertical: 14,
+  },
+  actionText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  /* ── Sections ── */
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  emptyText: {
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: 4,
+  },
+  sessionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  sessionDate: {
+    color: colors.textPrimary,
+    flex: 1,
+    fontSize: 14,
   },
 });
 

@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '@/components/common/Button';
+import DateTimeField from '@/components/common/DateTimeField';
 import ErrorMessage from '@/components/common/ErrorMessage';
+import * as classLogApi from '@/services/classLogApi';
+import { colors } from '@/constants/branding';
 import * as sessionApi from '@/services/sessionApi';
+import { TextInput } from 'react-native';
 import { useBatches } from '@/hooks/useBatches';
 import type { Batch } from '@/types';
-import { TouchableOpacity } from 'react-native';
 
 const CreateSession: React.FC = () => {
   const router = useRouter();
   const { batches } = useBatches();
   const [selectedBatchId, setSelectedBatchId] = useState('');
-  const [scheduledAt, setScheduledAt] = useState('');
+  const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
+  const [topicTaught, setTopicTaught] = useState('');
+  const [subtopic, setSubtopic] = useState('');
+  const [homework, setHomework] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,20 +29,26 @@ const CreateSession: React.FC = () => {
       setError('Please select a batch.');
       return;
     }
-    if (!scheduledAt.trim()) {
+    if (!scheduledAt) {
       setError('Scheduled date/time is required.');
-      return;
-    }
-    const dateValue = new Date(scheduledAt.trim());
-    if (isNaN(dateValue.getTime())) {
-      setError('Invalid date format. Use ISO format: 2024-06-01T10:00:00');
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      await sessionApi.createSession(selectedBatchId, dateValue.toISOString());
-      router.back();
+      const session = await sessionApi.createSession(selectedBatchId, scheduledAt.toISOString());
+      if (topicTaught.trim()) {
+        await classLogApi.createClassLog({
+          batchId: selectedBatchId,
+          sessionId: session.id,
+          date: scheduledAt.toISOString().split('T')[0] ?? new Date().toISOString().split('T')[0] ?? '',
+          topicTaught: topicTaught.trim(),
+          subtopic: subtopic.trim() || undefined,
+          homework: homework.trim() || undefined,
+          remarks: remarks.trim() || undefined,
+        });
+      }
+      router.replace('/(teacher)/sessions');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create session');
     } finally {
@@ -43,74 +57,120 @@ const CreateSession: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Schedule Session</Text>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Schedule Session</Text>
 
-      {error ? <ErrorMessage message={error} /> : null}
+        {error ? <ErrorMessage message={error} /> : null}
 
-      <Text style={styles.label}>Select Batch *</Text>
-      <View style={styles.batchList}>
-        {batches.map((batch: Batch) => (
-          <TouchableOpacity
-            key={batch.id}
-            style={[
-              styles.batchItem,
-              selectedBatchId === batch.id && styles.batchItemActive,
-            ]}
-            onPress={() => setSelectedBatchId(batch.id)}
-          >
-            <Text
-              style={[
-                styles.batchItemText,
-                selectedBatchId === batch.id && styles.batchItemTextActive,
-              ]}
-            >
-              {batch.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <Text style={styles.label}>Select Batch *</Text>
+        <View style={styles.batchList}>
+          {batches.length === 0 ? (
+            <Text style={styles.hint}>No batches yet - create one first.</Text>
+          ) : (
+            batches.map((batch: Batch) => (
+              <TouchableOpacity
+                key={batch.id}
+                style={[
+                  styles.batchItem,
+                  selectedBatchId === batch.id && styles.batchItemActive,
+                ]}
+                onPress={() => setSelectedBatchId(batch.id)}
+              >
+                <Text
+                  style={[
+                    styles.batchItemText,
+                    selectedBatchId === batch.id && styles.batchItemTextActive,
+                  ]}
+                >
+                  {batch.name}
+                </Text>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
 
-      <Text style={styles.label}>Scheduled Date & Time *</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="2024-06-01T10:00:00"
-        placeholderTextColor="#9CA3AF"
-        value={scheduledAt}
-        onChangeText={setScheduledAt}
-        autoCapitalize="none"
-      />
-      <Text style={styles.hint}>Enter in ISO 8601 format (e.g. 2024-06-01T10:00:00)</Text>
+        <DateTimeField
+          label="Scheduled Date & Time *"
+          value={scheduledAt}
+          onChange={setScheduledAt}
+          mode="datetime"
+        />
 
-      <Button
-        title="Schedule Session"
-        onPress={() => { void handleSubmit(); }}
-        loading={loading}
-        style={styles.button}
-      />
-    </ScrollView>
+        <Text style={styles.label}>Agenda / Topic taught (optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Quadratic equations"
+          placeholderTextColor={colors.textMuted}
+          value={topicTaught}
+          onChangeText={setTopicTaught}
+        />
+
+        <Text style={styles.label}>Subtopic (optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Factorization and roots"
+          placeholderTextColor={colors.textMuted}
+          value={subtopic}
+          onChangeText={setSubtopic}
+        />
+
+        <Text style={styles.label}>Homework (optional)</Text>
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          placeholder="Homework assigned"
+          placeholderTextColor={colors.textMuted}
+          value={homework}
+          onChangeText={setHomework}
+          multiline
+          numberOfLines={3}
+        />
+
+        <Text style={styles.label}>Remarks (optional)</Text>
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          placeholder="Any additional notes"
+          placeholderTextColor={colors.textMuted}
+          value={remarks}
+          onChangeText={setRemarks}
+          multiline
+          numberOfLines={3}
+        />
+
+        <Button
+          title="Schedule Session"
+          onPress={() => { void handleSubmit(); }}
+          loading={loading}
+          style={styles.button}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
   batchItem: {
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: 10,
     borderWidth: 1,
     marginBottom: 8,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   batchItemActive: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#4F46E5',
+    backgroundColor: colors.primarySurface,
+    borderColor: colors.primary,
   },
   batchItemText: {
-    color: '#374151',
+    color: colors.textPrimary,
     fontSize: 14,
   },
   batchItemTextActive: {
-    color: '#4F46E5',
+    color: colors.primary,
     fontWeight: '600',
   },
   batchList: {
@@ -120,40 +180,43 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   container: {
-    backgroundColor: '#F9FAFB',
     flex: 1,
   },
   content: {
     padding: 20,
   },
   hint: {
-    color: '#9CA3AF',
+    color: colors.textMuted,
     fontSize: 12,
     marginBottom: 16,
-    marginTop: -10,
-  },
-  input: {
-    backgroundColor: '#ffffff',
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    borderWidth: 1,
-    color: '#111827',
-    fontSize: 15,
-    marginBottom: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    marginTop: 0,
   },
   label: {
-    color: '#374151',
+    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 6,
   },
+  input: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    color: colors.textPrimary,
+    fontSize: 15,
+    marginBottom: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  multiline: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
   title: {
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 24,
   },
 });
 

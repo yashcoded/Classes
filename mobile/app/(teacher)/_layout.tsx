@@ -5,6 +5,8 @@ export default function TeacherLayout(): React.ReactElement {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="dashboard" />
+      <Stack.Screen name="pending-approval" />
+      <Stack.Screen name="approvals" />
       <Stack.Screen name="batches/index" />
       <Stack.Screen name="batches/[id]" />
       <Stack.Screen name="batches/create" />

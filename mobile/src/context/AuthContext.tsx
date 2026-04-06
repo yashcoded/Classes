@@ -14,6 +14,12 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (body: {
+    idToken?: string;
+    accessToken?: string;
+    role?: UserRole;
+    teacherId?: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   register: (
     email: string,
@@ -61,6 +67,21 @@ export function AuthProvider({
     setUser(response.user);
   }, []);
 
+  const loginWithGoogle = useCallback(
+    async (body: {
+      idToken?: string;
+      accessToken?: string;
+      role?: UserRole;
+      teacherId?: string;
+    }) => {
+      const response = await authApi.loginWithGoogle(body);
+      await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      setToken(response.token);
+      setUser(response.user);
+    },
+    [],
+  );
+
   const logout = useCallback(async () => {
     await AsyncStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -84,7 +105,9 @@ export function AuthProvider({
   );
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, register }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, loginWithGoogle, logout, register }}
+    >
       {children}
     </AuthContext.Provider>
   );

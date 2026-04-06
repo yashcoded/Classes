@@ -8,6 +8,7 @@ import {
   ValidationError,
   UserRole,
 } from '../types';
+import { studentParentLinks } from '../models';
 
 const feeRepo = new FeeRepository();
 const userRepo = new UserRepository();
@@ -42,6 +43,27 @@ export const feeService = {
 
   getStudentFees(studentId: string): FeeRecord[] {
     return feeRepo.findByStudentId(studentId);
+  },
+
+  getFeesForUser(userId: string): FeeRecord[] {
+    const requester = userRepo.findById(userId);
+    if (!requester) throw new NotFoundError('User not found');
+
+    if (requester.role === UserRole.STUDENT) {
+      return feeRepo.findByStudentId(userId);
+    }
+
+    if (requester.role === UserRole.PARENT) {
+      const approvedLink = Array.from(studentParentLinks.values()).find(
+        (link) => link.parentId === userId && link.status === 'approved',
+      );
+      if (!approvedLink) {
+        throw new ForbiddenError('No approved student link found for this parent');
+      }
+      return feeRepo.findByStudentId(approvedLink.studentId);
+    }
+
+    throw new ForbiddenError('Access denied');
   },
 
   getAllFees(requesterId: string): FeeRecord[] {

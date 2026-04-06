@@ -1,12 +1,20 @@
-module.exports = function(api) {
+const path = require('path');
+
+module.exports = function (api) {
   api.cache(true);
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      ['module-resolver', {
-        root: ['./src'],
-        alias: { '@': './src' }
-      }]
-    ]
+      [
+        'module-resolver',
+        {
+          extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
+          // Resolve from mobile package root (avoid `root: ['./src']` + `@` alias clashes in app/)
+          alias: {
+            '@': path.resolve(__dirname, 'src'),
+          },
+        },
+      ],
+    ],
   };
 };

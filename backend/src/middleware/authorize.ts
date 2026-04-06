@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserRole, ForbiddenError, UnauthorizedError } from '../types';
+import { UserRole, ApprovalStatus, ForbiddenError, UnauthorizedError } from '../types';
 
 export function authorize(...roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -13,4 +13,16 @@ export function authorize(...roles: UserRole[]) {
     }
     next();
   };
+}
+
+export function requireApproved(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    next(new UnauthorizedError());
+    return;
+  }
+  if (req.user.status !== ApprovalStatus.APPROVED) {
+    next(new ForbiddenError('Account pending approval'));
+    return;
+  }
+  next();
 }

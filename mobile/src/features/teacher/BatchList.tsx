@@ -7,10 +7,12 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '@/components/common/Card';
 import EmptyState from '@/components/common/EmptyState';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { colors } from '@/constants/branding';
 import { useBatches } from '@/hooks/useBatches';
 import type { Batch } from '@/types';
 
@@ -48,6 +50,7 @@ const BatchList: React.FC = () => {
   );
 
   return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
     <View style={styles.container}>
       <FlatList
         data={batches}
@@ -71,26 +74,30 @@ const BatchList: React.FC = () => {
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
   active: {
-    color: '#065F46',
+    color: colors.success,
   },
   batchName: {
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 17,
     fontWeight: '700',
     marginBottom: 4,
   },
   container: {
-    backgroundColor: '#F9FAFB',
     flex: 1,
   },
   fab: {
     alignItems: 'center',
-    backgroundColor: '#4F46E5',
+    backgroundColor: colors.primary,
     borderRadius: 28,
     bottom: 24,
     elevation: 6,
@@ -111,10 +118,10 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   inactive: {
-    color: '#9CA3AF',
+    color: colors.textMuted,
   },
   list: {
-    padding: 16,
+    padding: 20,
   },
   meta: {
     flexDirection: 'row',
@@ -122,16 +129,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   metaText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 13,
   },
   schedule: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 13,
     marginBottom: 4,
   },
   subject: {
-    color: '#4F46E5',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 4,

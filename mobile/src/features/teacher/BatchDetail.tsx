@@ -8,11 +8,13 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '@/components/common/Card';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Badge from '@/components/common/Badge';
 import EmptyState from '@/components/common/EmptyState';
+import { colors } from '@/constants/branding';
 import * as batchApi from '@/services/batchApi';
 import * as sessionApi from '@/services/sessionApi';
 import * as classLogApi from '@/services/classLogApi';
@@ -80,6 +82,7 @@ const BatchDetail: React.FC<BatchDetailProps> = ({ batchId }) => {
   const TABS: TabName[] = ['Members', 'Sessions', 'Logs'];
 
   return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
     <View style={styles.container}>
       <Card style={styles.batchHeader}>
         <Text style={styles.batchName}>{batch.name}</Text>
@@ -109,7 +112,7 @@ const BatchDetail: React.FC<BatchDetailProps> = ({ batchId }) => {
           renderItem={({ item }) => (
             <Card>
               <View style={styles.memberRow}>
-                <View>
+                <View style={styles.memberInfo}>
                   <Text style={styles.memberName}>
                     {item.student?.name ?? item.studentId}
                   </Text>
@@ -185,39 +188,44 @@ const BatchDetail: React.FC<BatchDetailProps> = ({ batchId }) => {
         </ScrollView>
       )}
     </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
   batchHeader: {
-    margin: 16,
+    marginHorizontal: 20,
+    marginTop: 12,
     marginBottom: 0,
   },
   batchName: {
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 4,
   },
   container: {
-    backgroundColor: '#F9FAFB',
     flex: 1,
   },
   listContent: {
-    padding: 16,
+    padding: 20,
   },
   logDate: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 12,
     marginBottom: 4,
   },
   logMeta: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 13,
     marginTop: 4,
   },
   logTopic: {
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -226,33 +234,38 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   memberEmail: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 12,
     marginTop: 2,
   },
+  memberInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
   memberName: {
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '600',
   },
   memberRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   removeButton: {
     marginTop: 6,
   },
   removeText: {
-    color: '#EF4444',
+    color: colors.danger,
     fontSize: 13,
   },
   schedule: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 13,
     marginTop: 2,
   },
   sessionDate: {
-    color: '#374151',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '500',
   },
@@ -262,34 +275,44 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   subject: {
-    color: '#4F46E5',
+    color: colors.primary,
     fontSize: 14,
     marginBottom: 2,
   },
   tab: {
+    alignItems: 'center',
     flex: 1,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 8,
     paddingVertical: 10,
   },
   tabActive: {
-    borderBottomColor: '#4F46E5',
+    borderBottomColor: colors.primary,
     borderBottomWidth: 2,
   },
   tabText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '500',
+    includeFontPadding: false,
+    lineHeight: 18,
     textAlign: 'center',
   },
   tabTextActive: {
-    color: '#4F46E5',
+    color: colors.primary,
     fontWeight: '700',
   },
   tabs: {
-    backgroundColor: '#ffffff',
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: colors.surface,
+    borderBottomColor: colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
+    marginHorizontal: 20,
     marginTop: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 4,
+    paddingTop: 2,
   },
 });
 

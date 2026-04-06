@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ViewStyle,
 } from 'react-native';
+import { colors } from '@/constants/branding';
 
 interface ButtonProps {
   title: string;
@@ -20,9 +21,9 @@ const VARIANT_STYLES: Record<
   NonNullable<ButtonProps['variant']>,
   { bg: string; text: string }
 > = {
-  primary: { bg: '#4F46E5', text: '#ffffff' },
-  secondary: { bg: '#E5E7EB', text: '#111827' },
-  danger: { bg: '#EF4444', text: '#ffffff' },
+  primary: { bg: colors.primary, text: '#ffffff' },
+  secondary: { bg: '#E2E8F0', text: colors.textPrimary },
+  danger: { bg: colors.danger, text: '#ffffff' },
 };
 
 const Button: React.FC<ButtonProps> = ({
@@ -60,7 +61,7 @@ const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 10,
     justifyContent: 'center',
     minHeight: 48,
     paddingHorizontal: 20,

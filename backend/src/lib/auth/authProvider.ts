@@ -1,9 +1,10 @@
-import { UserRole } from '../../types';
+import { UserRole, ApprovalStatus } from '../../types';
 
 export interface AuthPayload {
   userId: string;
   role: UserRole;
   email: string;
+  status: ApprovalStatus;
 }
 
 export interface IAuthProvider {

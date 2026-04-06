@@ -1,11 +1,13 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '@/components/common/Card';
 import EmptyState from '@/components/common/EmptyState';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Badge from '@/components/common/Badge';
+import { colors } from '@/constants/branding';
 import { useSessions } from '@/hooks/useSessions';
 import type { ClassSession, SessionStatus } from '@/types';
 
@@ -52,41 +54,76 @@ const SessionList: React.FC = () => {
   );
 
   return (
-    <FlatList
-      style={styles.container}
-      data={sessions}
-      keyExtractor={(item) => item.id}
-      renderItem={renderItem}
-      contentContainerStyle={styles.list}
-      ListEmptyComponent={
-        <EmptyState
-          icon="📅"
-          title="No sessions yet"
-          description="Create a session from a batch"
-        />
-      }
-      onRefresh={refresh}
-      refreshing={isLoading}
-    />
+    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.container}>
+      <FlatList
+        data={sessions}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <EmptyState
+            icon="📅"
+            title="No sessions yet"
+            description="Tap + to create a session"
+          />
+        }
+        onRefresh={refresh}
+        refreshing={isLoading}
+      />
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/(teacher)/sessions/create')}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#F9FAFB',
+  safe: {
+    backgroundColor: colors.background,
     flex: 1,
   },
+  container: {
+    flex: 1,
+  },
+  fab: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    bottom: 24,
+    elevation: 6,
+    height: 56,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    width: 56,
+  },
+  fabText: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '300',
+    lineHeight: 32,
+  },
   date: {
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
   },
   list: {
-    padding: 16,
+    padding: 20,
   },
   time: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 13,
     marginBottom: 8,
   },

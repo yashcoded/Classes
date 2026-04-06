@@ -15,6 +15,9 @@ export default function Index(): React.ReactElement {
   }
 
   if (user.role === 'teacher') {
+    if (user.status === 'pending') {
+      return <Redirect href="/(teacher)/pending-approval" />;
+    }
     return <Redirect href="/(teacher)/dashboard" />;
   }
 
@@ -24,6 +27,10 @@ export default function Index(): React.ReactElement {
 
   if (user.role === 'parent') {
     return <Redirect href="/(parent)/dashboard" />;
+  }
+
+  if (user.role === 'admin') {
+    return <Redirect href="/(admin)/dashboard" />;
   }
 
   return <Redirect href="/(auth)/login" />;

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Card from '@/components/common/Card';
+import EmptyState from '@/components/common/EmptyState';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import * as reportApi from '@/services/reportApi';
@@ -27,6 +28,15 @@ const LinkedStudentProgress: React.FC = () => {
   useEffect(() => { void load(); }, [load]);
 
   if (isLoading) return <LoadingSpinner message="Loading progress..." />;
+  if (error?.includes('No approved student link found')) {
+    return (
+      <EmptyState
+        icon="🔗"
+        title="Link a student first"
+        description="Approve a parent-student link to view progress."
+      />
+    );
+  }
   if (error) return <ErrorMessage message={error} onRetry={() => { void load(); }} />;
   if (!report) return <ErrorMessage message="No data available" />;
 

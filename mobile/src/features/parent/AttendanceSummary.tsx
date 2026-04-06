@@ -29,6 +29,15 @@ const AttendanceSummary: React.FC = () => {
   useEffect(() => { void load(); }, [load]);
 
   if (isLoading) return <LoadingSpinner message="Loading attendance..." />;
+  if (error?.includes('No approved student link found')) {
+    return (
+      <EmptyState
+        icon="🔗"
+        title="Link a student first"
+        description="Approve a parent-student link to view attendance."
+      />
+    );
+  }
   if (error) return <ErrorMessage message={error} onRetry={() => { void load(); }} />;
   if (!report) return <ErrorMessage message="No data" />;
 

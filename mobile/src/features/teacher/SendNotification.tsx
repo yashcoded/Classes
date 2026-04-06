@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '@/components/common/Button';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import * as notificationApi from '@/services/notificationApi';
@@ -56,6 +57,7 @@ const SendNotification: React.FC = () => {
   };
 
   return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Send Notification</Text>
       {error ? <ErrorMessage message={error} /> : null}
@@ -122,10 +124,15 @@ const SendNotification: React.FC = () => {
         style={styles.button}
       />
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: '#F9FAFB',
+    flex: 1,
+  },
   button: {
     marginTop: 8,
   },
@@ -135,12 +142,14 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingTop: 8,
   },
   heading: {
     color: '#111827',
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 18,
+    textAlign: 'center',
   },
   input: {
     backgroundColor: '#ffffff',

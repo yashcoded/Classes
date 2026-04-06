@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppBrandMark from '@/components/common/AppBrandMark';
 import Card from '@/components/common/Card';
 import Badge from '@/components/common/Badge';
 import ErrorMessage from '@/components/common/ErrorMessage';
@@ -8,6 +10,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import * as reportApi from '@/services/reportApi';
 import * as notificationApi from '@/services/notificationApi';
+import { colors } from '@/constants/branding';
 import type { StudentReport, Notification } from '@/types';
 
 const ParentDashboard: React.FC = () => {
@@ -15,19 +18,40 @@ const ParentDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const [report, setReport] = useState<StudentReport | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [reportHint, setReportHint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setReportHint(null);
     try {
-      const [reportData, notifData] = await Promise.all([
+      const [reportResult, notifResult] = await Promise.allSettled([
         reportApi.getMyStudentReport(),
         notificationApi.getMyNotifications(),
       ]);
-      setReport(reportData);
-      setNotifications(notifData);
+
+      if (notifResult.status === 'fulfilled') {
+        setNotifications(notifResult.value);
+      } else {
+        throw notifResult.reason;
+      }
+
+      if (reportResult.status === 'fulfilled') {
+        setReport(reportResult.value);
+      } else {
+        const reportError =
+          reportResult.reason instanceof Error
+            ? reportResult.reason.message
+            : 'Failed to load student report';
+        if (reportError.includes('No approved student link found')) {
+          setReport(null);
+          setReportHint('Link a student account to view attendance, tests, and fee progress.');
+        } else {
+          throw reportResult.reason;
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard');
     } finally {
@@ -43,40 +67,65 @@ const ParentDashboard: React.FC = () => {
   const unreadCount = notifications.filter((n) => !n.readBy.includes(user?.id ?? '')).length;
 
   return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, {user?.name ?? 'Parent'} 👋</Text>
-          <Text style={styles.sub}>Your child&apos;s overview</Text>
+        <View style={styles.headerLeft}>
+          <AppBrandMark variant="small" showTagline={false} />
+          <Text style={styles.greeting}>Hi {user?.name ?? 'Parent'}! 👪💛</Text>
+          <Text style={styles.subtitle}>
+            Stay close to your learner&apos;s progress & wins 🌟
+          </Text>
         </View>
-        <TouchableOpacity onPress={() => { void logout(); }}>
-          <Text style={styles.logout}>Logout</Text>
+        <TouchableOpacity
+          onPress={() => {
+            void (async () => {
+              await logout();
+              router.replace('/(auth)/login');
+            })();
+          }}
+          style={styles.logoutBtn}
+        >
+          <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
       </View>
 
+      {/* ── Stats ── */}
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
           <Text style={styles.statValue}>
             {report?.attendanceSummary?.percentage ?? 0}%
           </Text>
-          <Text style={styles.statLabel}>Attendance</Text>
+          <Text style={styles.statLabel}>✅ Attendance</Text>
         </Card>
         <Card style={styles.statCard}>
           <Text style={styles.statValue}>{report?.testResults?.length ?? 0}</Text>
-          <Text style={styles.statLabel}>Tests</Text>
+          <Text style={styles.statLabel}>📝 Tests</Text>
         </Card>
         <Card style={styles.statCard}>
           <Text style={styles.statValue}>{unreadCount}</Text>
-          <Text style={styles.statLabel}>Unread</Text>
+          <Text style={styles.statLabel}>🔔 Unread</Text>
         </Card>
       </View>
 
-      <Text style={styles.sectionTitle}>Quick Links</Text>
-      <View style={styles.quickLinks}>
+      {reportHint ? (
+        <Card>
+          <Text style={styles.emptyText}>{reportHint}</Text>
+          <TouchableOpacity onPress={() => router.push('/(parent)/link-student')}>
+            <Text style={styles.viewLink}>Link a student now →</Text>
+          </TouchableOpacity>
+        </Card>
+      ) : null}
+
+      {/* ── Quick links (2-column grid) ── */}
+      <Text style={styles.sectionTitle}>Family hub ⚡</Text>
+      <View style={styles.linksGrid}>
         {[
+          { label: '🔗 Link student', route: '/(parent)/link-student' as const },
           { label: '📊 Attendance', route: '/(parent)/attendance' as const },
           { label: '📝 Tests', route: '/(parent)/tests' as const },
-          { label: '💰 Fees', route: '/(parent)/fees' as const },
+          { label: '💳 Fees', route: '/(parent)/fees' as const },
           { label: '🔔 Notifications', route: '/(parent)/notifications' as const },
           { label: '📈 Progress', route: '/(parent)/progress' as const },
         ].map((link) => (
@@ -90,7 +139,8 @@ const ParentDashboard: React.FC = () => {
         ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Latest Test</Text>
+      {/* ── Latest test ── */}
+      <Text style={styles.sectionTitle}>Latest test 🏆</Text>
       {report?.testResults && report.testResults.length > 0 ? (
         (() => {
           const latest = report.testResults[report.testResults.length - 1];
@@ -119,7 +169,8 @@ const ParentDashboard: React.FC = () => {
         </Card>
       )}
 
-      <Text style={styles.sectionTitle}>Fee Status</Text>
+      {/* ── Fee status ── */}
+      <Text style={styles.sectionTitle}>Fee status 💰</Text>
       {report?.fees && report.fees.length > 0 ? (
         (() => {
           const pending = report.fees.filter((f) => f.status !== 'paid');
@@ -133,132 +184,165 @@ const ParentDashboard: React.FC = () => {
                 <Text style={styles.feeAmount}>₹{totalDue}</Text>
               </View>
               <TouchableOpacity onPress={() => router.push('/(parent)/fees')}>
-                <Text style={styles.viewLink}>View Details →</Text>
+                <Text style={styles.viewLink}>View details →</Text>
               </TouchableOpacity>
             </Card>
           );
         })()
       ) : (
         <Card>
-          <Text style={styles.emptyText}>No pending fees 🎉</Text>
+          <Text style={styles.emptyText}>No pending fees</Text>
         </Card>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
   container: {
-    backgroundColor: '#F9FAFB',
     flex: 1,
   },
   content: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 12,
+  },
+
+  /* ── Header ── */
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  headerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  greeting: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  subtitle: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  logoutBtn: {
+    paddingVertical: 4,
+    paddingLeft: 8,
+  },
+  logoutText: {
+    color: colors.danger,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  /* ── Stats ── */
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: -6,
+    marginBottom: 24,
+  },
+  statCard: {
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 6,
+    marginBottom: 0,
+    paddingVertical: 18,
+  },
+  statValue: {
+    color: colors.primary,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  statLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 6,
+  },
+
+  /* ── Quick links grid ── */
+  linksGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 24,
+    justifyContent: 'space-between',
+  },
+  linkBtn: {
+    backgroundColor: colors.primarySurface,
+    borderRadius: 10,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    width: '48%',
+  },
+  linkText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  /* ── Sections ── */
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
   },
   emptyText: {
-    color: '#9CA3AF',
+    color: colors.textMuted,
     textAlign: 'center',
+    paddingVertical: 4,
   },
-  feeAmount: {
-    color: '#EF4444',
+
+  /* ── Test card ── */
+  testTitle: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  testRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  marks: {
+    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
   },
-  feeLabel: {
-    color: '#374151',
-    fontSize: 14,
-    flex: 1,
-  },
+
+  /* ── Fee card ── */
   feeRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  greeting: {
-    color: '#111827',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    marginTop: 8,
-  },
-  linkBtn: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 8,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  linkText: {
-    color: '#4F46E5',
+  feeLabel: {
+    color: colors.textPrimary,
     fontSize: 14,
-    fontWeight: '600',
+    flex: 1,
   },
-  logout: {
-    color: '#EF4444',
-    fontWeight: '600',
-  },
-  marks: {
-    color: '#111827',
+  feeAmount: {
+    color: colors.danger,
     fontSize: 18,
     fontWeight: '700',
   },
-  quickLinks: {
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10,
-    marginTop: 4,
-  },
-  statCard: {
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 16,
-  },
-  statLabel: {
-    color: '#6B7280',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  statValue: {
-    color: '#4F46E5',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  sub: {
-    color: '#6B7280',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  testRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  testTitle: {
-    color: '#111827',
-    fontSize: 15,
-    fontWeight: '600',
-  },
   viewLink: {
-    color: '#4F46E5',
+    color: colors.primary,
     fontSize: 13,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 2,
   },
 });
 

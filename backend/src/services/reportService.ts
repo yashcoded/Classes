@@ -5,6 +5,7 @@ import { AttendanceRepository } from '../repositories/attendanceRepository';
 import { TestRepository, TestResultRepository } from '../repositories/testRepository';
 import { FeeRepository } from '../repositories/feeRepository';
 import { SessionRepository } from '../repositories/sessionRepository';
+import { studentParentLinks } from '../models';
 import {
   NotFoundError,
   ForbiddenError,
@@ -98,6 +99,23 @@ export const reportService = {
       batches: batchReports,
       fees: feeSummary,
     };
+  },
+
+  getParentStudentReport(parentId: string) {
+    const requester = userRepo.findById(parentId);
+    if (!requester) throw new NotFoundError('Requester not found');
+    if (requester.role !== UserRole.PARENT) {
+      throw new ForbiddenError('Only parents can view this report');
+    }
+
+    const approvedLink = Array.from(studentParentLinks.values()).find(
+      (link) => link.parentId === parentId && link.status === 'approved',
+    );
+    if (!approvedLink) {
+      throw new ForbiddenError('No approved student link found for this parent');
+    }
+
+    return this.getStudentReport(approvedLink.studentId, parentId);
   },
 
   getBatchReport(batchId: string, requesterId: string) {

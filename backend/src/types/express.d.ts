@@ -1,5 +1,5 @@
-import { Request } from 'express';
-import { UserRole } from './index';
+import 'express';
+import { UserRole, ApprovalStatus } from './index';
 
 declare global {
   namespace Express {
@@ -8,6 +8,7 @@ declare global {
         userId: string;
         role: UserRole;
         email: string;
+        status: ApprovalStatus;
       };
     }
   }

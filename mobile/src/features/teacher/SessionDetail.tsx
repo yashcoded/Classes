@@ -7,12 +7,14 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '@/components/common/Card';
 import Badge from '@/components/common/Badge';
 import Button from '@/components/common/Button';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import EmptyState from '@/components/common/EmptyState';
+import { colors } from '@/constants/branding';
 import * as sessionApi from '@/services/sessionApi';
 import * as attendanceApi from '@/services/attendanceApi';
 import type { AttendanceRecord, ClassSession, SessionStatus } from '@/types';
@@ -96,6 +98,7 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ sessionId }) => {
   if (!session) return <ErrorMessage message="Session not found" />;
 
   return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Card>
         <View style={styles.sessionHeader}>
@@ -184,6 +187,22 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ sessionId }) => {
         />
       </View>
 
+      <Button
+        title="📝 Add class log"
+        onPress={() =>
+          router.push({
+            pathname: '/(teacher)/class-logs/create',
+            params: {
+              batchId: session.batchId,
+              sessionId: session.id,
+              date: new Date(session.scheduledAt).toISOString(),
+            },
+          })
+        }
+        variant="secondary"
+        style={styles.logBtn}
+      />
+
       <Text style={styles.sectionTitle}>
         Attendance ({attendance.length})
       </Text>
@@ -220,17 +239,23 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ sessionId }) => {
         />
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
   actionBtn: {
     flex: 1,
     marginHorizontal: 4,
   },
   actionsRow: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginHorizontal: -4,
+    marginBottom: 20,
   },
   attendanceRow: {
     alignItems: 'center',
@@ -238,53 +263,55 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   checkInMeta: {
-    color: '#9CA3AF',
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
   container: {
-    backgroundColor: '#F9FAFB',
     flex: 1,
   },
   content: {
-    padding: 16,
+    padding: 20,
   },
   meta: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 13,
     marginTop: 4,
   },
+  logBtn: {
+    marginBottom: 20,
+  },
   qrBox: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    backgroundColor: colors.background,
+    borderRadius: 10,
     marginVertical: 8,
     padding: 16,
   },
   qrCode: {
-    color: '#1F2937',
+    color: colors.textPrimary,
     fontFamily: 'monospace',
     fontSize: 14,
     textAlign: 'center',
   },
   qrExpiry: {
-    color: '#9CA3AF',
+    color: colors.textMuted,
     fontSize: 12,
     textAlign: 'right',
   },
   qrLabel: {
-    color: '#374151',
+    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
   sectionTitle: {
-    color: '#374151',
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   sessionDate: {
-    color: '#111827',
+    color: colors.textPrimary,
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
@@ -295,11 +322,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sessionTime: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 14,
   },
   studentName: {
-    color: '#111827',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '500',
   },

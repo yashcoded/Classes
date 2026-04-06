@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import {
   createFee,
   getFee,
@@ -12,11 +12,11 @@ import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 import { UserRole } from '../types';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 router.use(authenticate);
 
-router.get('/me', authorize(UserRole.STUDENT), getMyFees);
+router.get('/me', authorize(UserRole.STUDENT, UserRole.PARENT), getMyFees);
 router.get('/overdue', authorize(UserRole.TEACHER, UserRole.ADMIN), getOverdueFees);
 router.get('/', authorize(UserRole.TEACHER, UserRole.ADMIN), getAllFees);
 router.post('/', authorize(UserRole.TEACHER, UserRole.ADMIN), createFee);

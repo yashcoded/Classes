@@ -14,3 +14,16 @@ export function getMyNotifications(): Promise<Notification[]> {
 export function markNotificationRead(id: string): Promise<Notification> {
   return apiPatch<Notification>(`/notifications/${id}/read`, {});
 }
+
+export function sendPaymentUpdate(data: {
+  studentId: string;
+  amount: number;
+  paidOn: string;
+  reference?: string;
+  note?: string;
+}): Promise<{ sent: number; notifications: Notification[] }> {
+  return apiPost<{ sent: number; notifications: Notification[] }>(
+    '/notifications/payment-update',
+    data,
+  );
+}

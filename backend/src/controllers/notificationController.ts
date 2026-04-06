@@ -51,3 +51,31 @@ export const getNotification = (req: Request, res: Response, next: NextFunction)
     next(err);
   }
 };
+
+export const sendPaymentUpdate = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const { studentId, amount, paidOn, reference, note } = req.body as {
+      studentId: string;
+      amount: number;
+      paidOn: string;
+      reference?: string;
+      note?: string;
+    };
+
+    if (!studentId || typeof amount !== 'number' || amount <= 0 || !paidOn) {
+      throw new ValidationError('studentId, amount (>0), and paidOn are required');
+    }
+
+    const notifications = notificationService.sendPaymentUpdate(req.user!.userId, {
+      studentId,
+      amount,
+      paidOn,
+      reference,
+      note,
+    });
+
+    res.status(201).json({ sent: notifications.length, notifications });
+  } catch (err) {
+    next(err);
+  }
+};

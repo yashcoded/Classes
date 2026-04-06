@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import {
   createSession,
   getSession,
@@ -13,11 +13,11 @@ import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 import { UserRole } from '../types';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 router.use(authenticate);
 
-router.get('/my', authorize(UserRole.TEACHER), getMySessions);
+router.get('/my', authorize(UserRole.TEACHER, UserRole.STUDENT), getMySessions);
 router.get('/:id', getSession);
 router.post('/batch/:batchId', authorize(UserRole.TEACHER, UserRole.ADMIN), createSession);
 router.get('/batch/:batchId', getBatchSessions);

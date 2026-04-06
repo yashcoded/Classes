@@ -1,5 +1,5 @@
 import { UserRepository } from '../repositories/userRepository';
-import { User, UserRole, NotFoundError, ForbiddenError } from '../types';
+import { User, UserRole, ApprovalStatus, NotFoundError, ForbiddenError, ValidationError, ConflictError } from '../types';
 import { teacherProfiles, studentProfiles, parentProfiles, studentParentLinks } from '../models';
 import { TeacherProfile, StudentProfile, ParentProfile, StudentParentLink } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -87,15 +87,72 @@ export const userService = {
       studentId,
       parentId,
       relation,
+      status: ApprovalStatus.APPROVED,
+      requestedBy: parentId,
       createdAt: new Date(),
     };
     studentParentLinks.set(link.id, link);
     return link;
   },
 
+  requestParentStudentLink(requestedBy: string, studentId: string, parentId: string, relation: string): StudentParentLink {
+    const student = userRepo.findById(studentId);
+    const parent = userRepo.findById(parentId);
+    if (!student || student.role !== UserRole.STUDENT) throw new NotFoundError('Student not found');
+    if (!parent || parent.role !== UserRole.PARENT) throw new NotFoundError('Parent not found');
+
+    for (const link of studentParentLinks.values()) {
+      if (link.studentId === studentId && link.parentId === parentId && link.status !== ApprovalStatus.REJECTED) {
+        throw new ConflictError('Link request already exists');
+      }
+    }
+
+    const link: StudentParentLink = {
+      id: uuidv4(),
+      studentId,
+      parentId,
+      relation,
+      status: ApprovalStatus.PENDING,
+      requestedBy,
+      createdAt: new Date(),
+    };
+    studentParentLinks.set(link.id, link);
+    return link;
+  },
+
+  getPendingParentStudentLinks(): (StudentParentLink & { studentName: string; parentName: string })[] {
+    return Array.from(studentParentLinks.values())
+      .filter((l) => l.status === ApprovalStatus.PENDING)
+      .map((link) => {
+        const student = userRepo.findById(link.studentId);
+        const parent = userRepo.findById(link.parentId);
+        return {
+          ...link,
+          studentName: student?.name ?? 'Unknown',
+          parentName: parent?.name ?? 'Unknown',
+        };
+      });
+  },
+
+  approveParentStudentLink(linkId: string, approvedByUserId: string, approved: boolean): StudentParentLink {
+    const link = studentParentLinks.get(linkId);
+    if (!link) throw new NotFoundError('Link not found');
+    if (link.status !== ApprovalStatus.PENDING) {
+      throw new ValidationError('Link already processed');
+    }
+    const updated: StudentParentLink = {
+      ...link,
+      status: approved ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED,
+      approvedBy: approved ? approvedByUserId : undefined,
+      approvedAt: approved ? new Date() : undefined,
+    };
+    studentParentLinks.set(linkId, updated);
+    return updated;
+  },
+
   getStudentParents(studentId: string): (User & { relation: string })[] {
     const links = Array.from(studentParentLinks.values()).filter(
-      (l) => l.studentId === studentId,
+      (l) => l.studentId === studentId && l.status === ApprovalStatus.APPROVED,
     );
     return links.flatMap((link) => {
       const parent = userRepo.findById(link.parentId);
@@ -108,7 +165,7 @@ export const userService = {
 
   getParentStudents(parentId: string): (User & { relation: string })[] {
     const links = Array.from(studentParentLinks.values()).filter(
-      (l) => l.parentId === parentId,
+      (l) => l.parentId === parentId && l.status === ApprovalStatus.APPROVED,
     );
     return links.flatMap((link) => {
       const student = userRepo.findById(link.studentId);
@@ -117,5 +174,43 @@ export const userService = {
       const { passwordHash: _ph, ...rest } = student;
       return [{ ...rest, relation: link.relation }];
     });
+  },
+
+  getParentStudentLinksForUser(userId: string): StudentParentLink[] {
+    return Array.from(studentParentLinks.values()).filter(
+      (l) => l.parentId === userId || l.studentId === userId,
+    );
+  },
+
+  searchStudents(query: string): User[] {
+    if (!query || query.trim().length < 2) return [];
+    const q = query.toLowerCase();
+    return userRepo
+      .findByRole(UserRole.STUDENT)
+      .filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+      .map(omitPassword);
+  },
+
+  getPendingTeachers(): User[] {
+    return userRepo
+      .findByRole(UserRole.TEACHER)
+      .filter((u) => u.status === ApprovalStatus.PENDING)
+      .map(omitPassword);
+  },
+
+  approveUser(userId: string, approved: boolean): User {
+    const user = userRepo.findById(userId);
+    if (!user) throw new NotFoundError('User not found');
+    const newStatus = approved ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED;
+    const updated = userRepo.update(userId, { status: newStatus } as Partial<User>);
+    if (!updated) throw new NotFoundError('User not found');
+    return omitPassword(updated);
+  },
+
+  getApprovedTeachers(): User[] {
+    return userRepo
+      .findByRole(UserRole.TEACHER)
+      .filter((u) => u.status === ApprovalStatus.APPROVED)
+      .map(omitPassword);
   },
 };
