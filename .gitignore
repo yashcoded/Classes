@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.expo/
+# Environment files (all folders)
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+web-build/
+*.orig.*
+.DS_Store
+coverage/
+*.log
+# Elastic Beanstalk local upload bundle (see backend/scripts/zip-eb.cjs)
+backend-eb-upload.zip

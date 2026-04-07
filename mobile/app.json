@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Class Konnect",
+    "slug": "class-konnect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "classesapp",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.classkonnect.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.classkonnect.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "14c5d755-e986-4f04-887b-0eb3563ffcc7"
+      }
+    }
+  }
+}

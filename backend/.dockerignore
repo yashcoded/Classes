@@ -1,0 +1,5 @@
+node_modules
+*.log
+.env
+
+# Note: do NOT ignore `dist` — this image copies pre-built `dist/` from the EB zip (see Dockerfile).

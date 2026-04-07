@@ -1,0 +1,32 @@
+{
+  "name": "classes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tuition/class management app (backend + mobile)",
+  "scripts": {
+    "install:all": "pnpm install",
+    "security:check-supply-chain": "node check-supply-chain.js",
+    "dev:backend": "pnpm --filter classes-backend dev",
+    "dev:mobile": "pnpm --filter classes-mobile start",
+    "build:backend": "pnpm --filter classes-backend build",
+    "start:backend": "pnpm --filter classes-backend start",
+    "test": "pnpm --filter classes-backend test",
+    "test:backend": "pnpm --filter classes-backend test"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@1.1.12": "1.1.13",
+      "brace-expansion@2.0.2": "2.0.3",
+      "brace-expansion@5.0.4": "5.0.5",
+      "fast-xml-parser": "4.5.5",
+      "node-forge": "1.4.0",
+      "path-to-regexp": "0.1.13",
+      "undici": "6.24.0",
+      "yaml@2.8.2": "2.8.3"
+    }
+  }
+}
